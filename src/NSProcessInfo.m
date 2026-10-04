@@ -34,6 +34,9 @@ extern char ***_NSGetEnviron();
  guaranteed to be stable across all threads; ala setenv etc.
  */
 
+// Needed at load by Electron Framework (Riot Client). Never posted: thermal state is not tracked.
+NSString *const NSProcessInfoThermalStateDidChangeNotification = @"NSProcessInfoThermalStateDidChangeNotification";
+
 @implementation NSProcessInfo
 
 + (NSProcessInfo *)processInfo
