@@ -379,6 +379,11 @@ SINGLETON_RR()
     return NO;
 }
 
+// NSProcessInfoThermalStateNominal: thermal pressure is not tracked.
+- (NSInteger) thermalState {
+    return 0;
+}
+
 @end
 
 #ifdef DARLING
