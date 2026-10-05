@@ -2,7 +2,11 @@
 #import <Foundation/NSString.h>
 #import <Foundation/NSURL.h>
 
-@interface NSURLComponents : NSObject
+@interface NSURLComponents : NSObject {
+    NSURL *_base;
+    NSString *_scheme;
+    NSString *_host;
+}
 
 - (instancetype)initWithURL:(NSURL *)url resolvingAgainstBaseURL:(BOOL)resolve;
 + (instancetype)componentsWithURL:(NSURL *)url resolvingAgainstBaseURL:(BOOL)resolve;
