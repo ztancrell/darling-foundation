@@ -12,10 +12,21 @@
 #import "NSNotificationInternal.h"
 #import <dispatch/dispatch.h>
 #import <pthread.h>
+#import <objc/runtime.h>
+
+// objc-internal.h
+extern id objc_loadWeakRetained(id *location);
+extern id objc_storeWeakOrNil(id *location, id obj);
 
 @interface _NSNotificationObserver : NSObject
 {
+	// Address only, for matching in removeObserver:. Messaged directly only
+	// when the observer's class refuses weak references.
 	id _observer;
+	// Like macOS 10.11 and later, an observer that is deallocated without
+	// removing itself is simply no longer notified.
+	id _weakObserver;
+	BOOL _isWeak;
 	SEL _selector;
 	NSString* _name;
 	id _object;
@@ -48,6 +59,7 @@
     if (self)
     {
         _observer = observer;
+        _isWeak = objc_storeWeakOrNil(&_weakObserver, observer) != nil;
         _selector = selector;
         _name = [name copy];
         _object = object;
@@ -59,6 +71,7 @@
 
 - (void)dealloc
 {
+    objc_destroyWeak(&_weakObserver);
     [_name release];
     [_queue release];
     [_block release];
@@ -83,7 +96,18 @@
     }
     else if (_observer != nil && _selector != NULL)
     {
-        [_observer performSelector:_selector withObject:notif];
+        if (_isWeak)
+        {
+            // ponytail: entries of dead observers stay in the list until
+            // removed or the center dies; prune here if lists grow.
+            id observer = objc_loadWeakRetained(&_weakObserver);
+            [observer performSelector:_selector withObject:notif];
+            [observer release];
+        }
+        else
+        {
+            [_observer performSelector:_selector withObject:notif];
+        }
     }
 }
 
